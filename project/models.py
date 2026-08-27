@@ -29,7 +29,19 @@ class User(db.Model):
         "Category", backref="owner", lazy=True, cascade="all, delete-orphan"
     )
 
+    def set_password(self, raw_password):
+        self.password_hash = generate_password_hash(raw_password)
 
+    def check_password(self, raw_password):
+        return check_password_hash(self.password_hash, raw_password)
+
+    @property
+    def is_admin(self):
+        return self.role == "admin"
+
+    @property
+    def initial(self):
+        return (self.username or "?")[0].upper()
 
 class Category(db.Model):
     __tablename__ = "categories"

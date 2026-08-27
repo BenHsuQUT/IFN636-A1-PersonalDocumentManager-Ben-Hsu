@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Sign Up · MyDocument{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="wordmark-row">
+      <span class="wordmark">MyDocument</span>
+      <span class="version-tag">ver. 1.0</span>
+    </div>
+    <p class="auth-subtitle">Personal Document Manager</p>
+    <h1 class="auth-heading">Sign Up</h1>
+
+    <form method="post" action="{{ url_for('register') }}">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input class="text-input" type="text" id="username" name="username" value="{{ username }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="text-input" type="email" id="email" name="email" value="{{ email }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="text-input" type="password" id="password" name="password" required minlength="6">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Create Your Account</button>
+    </form>
+
+    <p class="auth-switch">Already have an account? <a class="link-success" href="{{ url_for('login') }}">Sign in</a></p>
+
+    <div class="social-row">
+      <button type="button" class="btn btn-social" disabled>Continue with Google</button>
+      <button type="button" class="btn btn-social" disabled>Continue with Apple</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

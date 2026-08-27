@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ error_title }} · MyDocument{% endblock %}
+
+{% block body %}
+{% include "_header.html" %}
+<div class="page-shell">
+  <h1 class="d-flex justify-content-center">Error</h1>
+  <p class="d-flex justify-content-center">{{ error_message }}</p>
+</div>
+{% endblock %}
