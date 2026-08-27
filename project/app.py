@@ -325,8 +325,112 @@ def delete_document(doc_id):
         return redirect(url_for("admin_dashboard"))
     return redirect(url_for("dashboard"))
 
-# -------------------------------------------------------------------- admin_dashboard --
+# ------------------------------------------------------------ admin pages --
 @app.route("/admin")
 @admin_required
 def admin_dashboard():
-    return render_template("admin_dashboard.html")
+    all_users = User.query.order_by(User.created_at.asc()).all()
+    total_users = len(all_users)
+    active_users = sum(1 for u in all_users if u.is_active_account)
+    inactive_users = total_users - active_users
+    new_this_week = sum(
+        1 for u in all_users
+        if u.created_at and u.created_at >= datetime.utcnow() - timedelta(days=7)
+    )
+
+    total_documents = Document.query.filter_by(is_latest=True).count()
+    total_storage = sum(u.total_storage_bytes() for u in all_users)
+    quota = app.config["ADMIN_TOTAL_QUOTA_BYTES"]
+    percent_used = round((total_storage / quota) * 100, 1) if quota else 0
+
+    return render_template(
+        "admin_dashboard.html",
+        users=all_users,
+        total_users=total_users,
+        active_users=active_users,
+        inactive_users=inactive_users,
+        new_this_week=new_this_week,
+        total_documents=total_documents,
+        total_storage=total_storage,
+        percent_used=min(percent_used, 100),
+        quota=quota,
+        today=datetime.utcnow()
+    )
+
+
+@app.route("/admin/users/<int:user_id>/status", methods=["POST"])
+@admin_required
+def update_user_status(user_id):
+    user = User.query.get_or_404(user_id)
+    new_status = request.form.get("status", "active")
+
+    if user.id == session.get("user_id") and new_status != "active":
+        flash("You cannot deactivate your own account.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    user.is_active_account = (new_status == "active")
+    db.session.commit()
+    flash(f"Updated {user.username}'s status.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+
+    if user.id == session.get("user_id"):
+        flash("You cannot delete your own account.", "error")
+        return redirect(url_for("admin_dashboard"))
+
+    folder = os.path.join(app.config["UPLOAD_FOLDER"], str(user.id))
+    if os.path.isdir(folder):
+        shutil.rmtree(folder)
+
+    db.session.delete(user)
+    db.session.commit()
+    flash(f"Deleted user {user.username}.", "success")
+    return redirect(url_for("admin_dashboard"))
+
+
+#-------------------------------------------------error handlers--
+@app.errorhandler(404)
+def not_found(e):
+    return render_template(
+        "error.html",
+        error_title="Not Found",
+        error_message="Sorry, but we cannot find what you are looking for.",
+    ), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template(
+        "error.html",
+        error_title="Server Error",
+        error_message="Sorry, but the server has encountered an error. Please try again in a few minutes.",
+    ), 500
+
+# --------------------------------------------------------------- CLI/setup --
+@app.cli.command("init-db") #flask --app pdm_project.app init-db
+def init_db():
+    db.create_all()
+    print("Database tables created.")
+
+
+@app.cli.command("create-admin") #flask --app pdm_project.app create-admin
+def create_admin():
+    
+    import getpass
+    username = input("Admin username: ").strip()
+    email = input("Admin email: ").strip().lower()
+    password = getpass.getpass("Admin password: ")
+
+    if User.query.filter_by(username=username).first():
+        print("This username already exists.")
+        return
+
+    admin = User(username=username, email=email, role="admin")
+    admin.set_password(password)
+    db.session.add(admin)
+    db.session.commit()
+    print(f"Admin {username} created.")

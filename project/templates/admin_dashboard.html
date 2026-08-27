@@ -4,4 +4,112 @@
 {% block body %}
 {% set admin_mode = true %}
 {% include "_header.html" %}
+
+<div class="page-shell">
+  <div class="page-top-row">
+    <div>
+      <h1 class="page-heading">Administrative Log</h1>
+      <p class="page-sub">Today: {{ today|dateformat }}</p>
+    </div>
+  </div>
+  <!------------------------------------- card -------------------------------------->
+  <div class="stats-row">
+    <div class="panel stat-card">
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value">{{ total_users }}</div>
+      <div class="stat-foot">+{{ new_this_week }} registered this week</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Active Users</div>
+      <div class="stat-value">{{ active_users }}</div>
+      <div class="stat-foot">Currently authenticated</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Inactive Users</div>
+      <div class="stat-value">{{ inactive_users }}</div>
+      <div class="stat-foot">Accounts locked / archived</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Total Documents</div>
+      <div class="stat-value">{{ total_documents }} files</div>
+      <div class="stat-foot">{{ total_storage|human_size }} used</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Storage Used</div>
+      <div class="stat-value">{{ percent_used }}%</div>
+      <div class="stat-foot">{{ total_storage|human_size }} / {{ quota|human_size }}</div>
+    </div>
+  </div>
+  <!------------------------------------- Search/filter -------------------------------------->
+  <form>
+    <div class="search-row">
+      <input class="text-input" type="text" placeholder="Search Users">
+
+      {% set role_options = ['User', 'Admin'] %}
+      {% set status_options = ['Active', 'Inactive'] %}
+
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Role</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All</button></li>
+          {% for label in role_options %}
+            <li><button type="button" class="dropdown-item">{{ label }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Status</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All</button></li>
+          {% for label in status_options %}
+            <li><button type="button" class="dropdown-item">{{ label }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <button type="submit" class="btn btn-primary">&#128269; Search</button>
+    </div>
+  </form>
+  <!------------------------------------- User table -------------------------------------->
+  <div class="panel">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" disabled></th>
+          <th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Storage</th><th>Last Login</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><input type="checkbox" disabled></td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="role-pill">{{ u.role }}</span></td>
+          <td>
+            <form method="post" action="{{ url_for('update_user_status', user_id=u.id) }}" style="display:inline;">
+              <select name="status" class="status-pill {{ 'status-active' if u.is_active_account else 'status-inactive' }}" onchange="this.form.submit()" {{ 'disabled' if u.id == current_user.id }}>
+                <option value="active" {{ 'selected' if u.is_active_account }}>Active</option>
+                <option value="inactive" {{ 'selected' if not u.is_active_account }}>Inactive</option>
+              </select>
+            </form>
+          </td>
+          <td class="file-meta-muted">{{ u.total_storage_bytes()|human_size }} / {{ quota|human_size }}</td>
+          <td class="file-meta-muted">{{ u.last_login_at|dateformat('%b %d') if u.last_login_at else '—' }}{% if u.last_login_at %}, {{ u.last_login_at|timeformat }}{% endif %}</td>
+          <td>
+            {% if u.id != current_user.id %}
+            <form method="post" action="{{ url_for('delete_user', user_id=u.id) }}" class="m-0" onsubmit="return confirm('Delete user &quot;{{ u.username }}&quot;? This removes all of their documents too.');">
+              <button type="submit" class="btn btn-warning btn-sm">&#128465; Delete</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="empty-state">No users match this filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
