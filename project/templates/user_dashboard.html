@@ -3,7 +3,251 @@
 
 {% block body %}
 {% include "_header.html" %}
-{% endblock %}
 
-{% block scripts %}
+<div class="page-shell">
+  <div class="page-top-row">
+    <div>
+      <h1 class="page-heading">Welcome back, {{ current_user.username }}</h1>
+      <p class="page-sub">Today: {{ today|dateformat }}</p>
+    </div>
+    <!----------------------------- My Category --------------------------------------------------->
+    <div class="page-actions">
+      <div class="dropdown">
+        <button type="button" class="btn btn-outline dropdown-toggle no-caret" data-bs-toggle="dropdown" data-bs-auto-close="outside">My Category</button>
+        <div class="dropdown-menu dropdown-menu-end category-popover">
+          <div class="category-popover-header">
+            <span class="panel-title">My Category</span>
+          </div>
+          <div class="category-list" id="categoryList">
+            {% for cat in categories %}
+            <div class="category-row">
+              <span class="category-index">{{ loop.index }}.</span>
+              <form method="post" action="{{ url_for('rename_category', category_id=cat.id) }}" class="inline-edit-form" id="cat{{ cat.id }}EditForm">
+                <span class="inline-editable category-name" onclick="startInlineEdit('cat{{ cat.id }}')" title="Click to rename">{{ cat.name }}</span>
+                <input class="inline-edit-input" type="text" name="name" id="cat{{ cat.id }}Input" value="{{ cat.name }}" onblur="handleInlineBlur(this)" onkeydown="handleInlineKeydown(event, this)">
+              </form>
+              <form method="post" action="{{ url_for('delete_category', category_id=cat.id) }}" class="m-0" onsubmit="return confirm('Delete category &quot;{{ cat.name }}&quot;? Documents using it will be moved to Uncategorized.');">
+                <button type="submit" class="category-delete" title="Delete">&#128465;</button>
+              </form>
+            </div>
+            {% else %}
+            <div class="category-empty">No categories yet.</div>
+            {% endfor %}
+          </div>
+          <form method="post" action="{{ url_for('add_category') }}" class="category-add-form">
+            <input class="text-input" type="text" name="name" placeholder="New category name" required>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+          </form>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">+ Upload</button>
+    </div>
+  </div>
+  <!------------------------------------- cards ---------------------------------------------------->
+  <div class="stats-row">
+    <div class="panel stat-card">
+      <div class="stat-label">Total Documents</div>
+      <div class="stat-value">{{ total_documents }} files</div>
+      <div class="stat-foot">{{ total_storage|d_size }} used</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Recent Uploads</div>
+      <div class="stat-value">{{ recent_count }} files</div>
+      <div class="stat-foot">added this week</div>
+    </div>
+    <div class="panel stat-card">
+      <div class="stat-label">Storage Used</div>
+      <div class="stat-value">{{ percent_used }}% Capacity</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:{{ percent_used }}%;"></div></div>
+      <div class="stat-foot">{{ total_storage|d_size }} / {{ quota|d_size }}</div>
+    </div>
+  </div>
+  <!---------------------------- search & filter --------------------------------------------------------->
+  <form>
+    <div class="search-row">
+      <input class="text-input" type="text" placeholder="Search files, metadata...">
+      <button type="submit" class="btn btn-primary">&#128269; Search</button>
+    </div>
+
+    {% set type_options = ['PDF', 'Word', 'Excel', 'Text', 'Image'] %}
+    {% set date_options = ['Today', 'Last 7 days', 'Last 30 days'] %}
+    {% set size_options = ['< 1 MB', '1 MB – 100 MB', '>= 100 MB'] %}
+
+    <div class="filter-row">
+      <!-- Type Filter -->
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Type</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All Types</button></li>
+          {% for label in type_options %}
+            <li><button type="button" class="dropdown-item">{{ label }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <!-- Category Filter -->
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Category</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All Categories</button></li>
+          {% for cat in categories %}
+            <li><button type="button" class="dropdown-item">{{ cat.name }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <!-- Date Filter -->
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Date</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All Dates</button></li>
+          {% for label in date_options %}
+            <li><button type="button" class="dropdown-item">{{ label }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <!-- Size Filter -->
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">Size</button>
+        <ul class="dropdown-menu">
+          <li><button type="button" class="dropdown-item active">All Sizes</button></li>
+          {% for label in size_options %}
+            <li><button type="button" class="dropdown-item">{{ label }}</button></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </form>
+  <!----------------------------  files layout --------------------------------------------------------->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">All Files</span>
+      <div class="dropdown">
+        <button type="button" class="btn dd-trigger dropdown-toggle" data-bs-toggle="dropdown">&#8645; Date</button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><button type="button" class="dropdown-item dd-option-plain">Name</button></li>
+          <li><button type="button" class="dropdown-item dd-option-plain">Category</button></li>
+          <li><button type="button" class="dropdown-item dd-option-plain active">Date</button></li>
+        </ul>
+      </div>
+    </div>
+
+    {% if docs %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th></th><th>Name</th><th>Ver.</th><th>Category</th><th>Date</th><th>Size</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in docs %}
+        <tr class="file-row" onclick="handleRowClick(event, '{{ url_for('document_details', doc_id=d.id) }}')">
+          <td><span class="file-icon">{{ d.icon_label() }}</span></td>
+          <td><a class="file-title" href="{{ url_for('document_details', doc_id=d.id) }}">{{ d.title }}</a></td>
+          <td><span class="badge-version">V.{{ d.version }}</span></td>
+          <td>
+            <!-- Category Dropdown -->
+            <div class="dropdown">
+              <button type="button" class="btn category-tag dropdown-toggle" data-bs-toggle="dropdown">{{ d.category }}</button>
+              <div class="dropdown-menu category-edit-panel">
+                <form method="post" action="{{ url_for('update_document', doc_id=d.id) }}">
+                  <input type="hidden" name="title" value="{{ d.title }}">
+                  <input type="hidden" name="notes" value="{{ d.notes or '' }}">
+                  <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
+                  {% for cat in categories %}
+                    <button type="submit" name="category" value="{{ cat.name }}" class="dropdown-item {{ 'active' if d.category == cat.name }}">{{ cat.name }}</button>
+                  {% endfor %}
+                </form>
+              </div>
+            </div>
+          </td>
+          <td class="file-meta-muted">{{ d.uploaded_at|dateformat }}</td>
+          <td class="file-meta-muted">{{ d.d_size() }}</td>
+          <td>
+            <div class="dropdown">
+              <button type="button" class="btn row-action-btn dropdown-toggle no-caret" data-bs-toggle="dropdown" title="More options">&#8942;</button>
+              <div class="dropdown-menu dropdown-menu-end more-panel">
+                <form method="get" action="{{url_for('download_document', doc_id=d.id)}}">
+                    <button type="submit" class="btn btn-primary btn-sm">&#8595; Download</button>
+                </form>
+                <form method="post" action="{{ url_for('delete_document', doc_id=d.id) }}" class="m-0" onsubmit="return confirm('Delete &quot;{{ d.title }}&quot;? This removes all of its versions.');">
+                  <button type="submit" class="dropdown-item more-option-danger w-100">&#128465; Delete</button>
+                </form>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state">No documents match this view yet — try uploading one, or clear your filters.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!---------------------------- Upload Modal --------------------------------------------------------->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form method="post" action="{{ url_for('upload_document') }}" enctype="multipart/form-data" id="uploadForm" class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title modal-heading">Upload New Documents</h2>
+          <p class="modal-sub mb-0">Add new files (docx, pdf, txt)</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="modal-col-left">
+            <div class="dropzone" id="dropzone">
+              <div class="dropzone-icon">&#11015;</div>
+              <div class="dropzone-text">Drag &amp; Drop files here or click to browse</div>
+              <div class="dropzone-sub">docx, pdf, txt, up to 10 GB</div>
+              <input class="dropzone-input" type="file" name="file" id="fileInput" accept=".pdf,.docx,.txt" required>
+            </div>
+
+            <div class="queue-panel">
+              <p class="queue-title">Upload Queue (<span id="queueCount">0</span> file<span id="queuePlural">s</span>)</p>
+              <div class="queue-list" id="queueList">
+                <div class="queue-empty" id="queueEmpty">No files selected yet.</div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:14px;">
+              <label class="form-label">New version of (optional)</label>
+              <select class="select-input" name="version_of">
+                <option value="">— New document —</option>
+                {% for d in all_docs %}
+                  <option value="{{ d.id }}">{{ d.title }} (currently V.{{ d.version }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-col-right">
+            <div class="metadata-panel">
+              <p class="panel-title">Default Metadata</p>
+              <div class="form-group">
+                <label class="form-label">Document Title Override</label>
+                <input class="text-input" type="text" name="title" placeholder="e.g. Assignment1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="text-input" name="notes" rows="3" placeholder="Optional description"></textarea>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Categories</label>
+                <input class="text-input" type="text" name="category" placeholder="e.g. School">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save &amp; Upload</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
