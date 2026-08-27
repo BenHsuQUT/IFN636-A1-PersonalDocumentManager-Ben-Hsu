@@ -43,6 +43,17 @@ class User(db.Model):
     def initial(self):
         return (self.username or "?")[0].upper()
 
+    def total_storage_bytes(self):
+        return sum(d.filesize_bytes for d in self.documents)
+
+    def latest_documents(self):
+        return (
+            Document.query.filter_by(user_id=self.id, is_latest=True)
+            .order_by(Document.uploaded_at.desc())
+            .all()
+        )
+
+
 class Category(db.Model):
     __tablename__ = "categories"
 
@@ -74,3 +85,40 @@ class Document(db.Model):
 
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def relative_path(self):
+        return f"{self.user_id}/{self.stored_filename}"
+
+    def d_size(self):
+        size = float(self.filesize_bytes)
+        for unit in ("B", "KB", "MB", "GB"):
+            if size < 1024:
+                return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} TB"
+
+    def extension(self):
+        return self.original_filename.rsplit(".", 1)[-1].lower() if "." in self.original_filename else ""
+
+    def icon_label(self):
+        ext = self.extension()
+        return {
+            "docx": "W", "doc": "W",
+            "pdf": "PDF",
+            "txt": "TXT"
+        }.get(ext, ext.upper()[:3] or "FILE")
+
+    def is_previewable_image(self):
+        pass
+
+    def is_previewable_pdf(self):
+        pass
+
+    def versions(self):
+        return (
+            Document.query.filter_by(group_id=self.group_id)
+            .order_by(Document.version.desc())
+            .all()
+        )
+
+    def is_recent(self, days=7):
+        return self.uploaded_at and self.uploaded_at >= datetime.utcnow() - timedelta(days=days)

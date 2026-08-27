@@ -3,4 +3,79 @@
 
 {% block body %}
 {% include "_header.html" %}
+
+<div class="page-shell">
+  <div class="back-row">
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('index') }}">&#8592; Back</a>
+  </div>
+
+  <div class="detail-grid">
+    <div>
+      <p class="preview-heading">Preview: {{ doc.title }} | V.{{ doc.version }} {{ '(Latest)' if doc.is_latest else '(Older version)' }}</p>
+      <div class="preview-pane">
+        {% if doc.is_previewable_image() %}
+          <img src="{{ url_for('static', filename='uploads/' + doc.relative_path()) }}" alt="{{ doc.title }}">
+        {% elif doc.is_previewable_pdf() %}
+          <iframe src="{{ url_for('static', filename='uploads/' + doc.relative_path()) }}"></iframe>
+        {% else %}
+          <span>No Preview</span>
+        {% endif %}
+      </div>
+    </div>
+    <!------------------------------- Document Info ---------------------------------------------->
+    <div>
+      <div class="panel">
+        <div class="info-card-title">
+          <form method="post" action="{{ url_for('update_document', doc_id=doc.id) }}" class="inline-edit-form" id="titleEditForm">
+            <input type="hidden" name="category" value="{{ doc.category }}">
+            <input type="hidden" name="notes" value="{{ doc.notes or '' }}">
+            <span class="inline-editable" id="titleDisplay" onclick="startInlineEdit('title')" title="Click to edit">{{ doc.title }}</span>
+            <input class="inline-edit-input" type="text" name="title" id="titleInput" value="{{ doc.title }}" onblur="handleInlineBlur(this)" onkeydown="handleInlineKeydown(event, this)">
+          </form>
+          | V.{{ doc.version }} {{ '(Latest)' if doc.is_latest }}
+        </div>
+        <div class="info-card-desc">
+          <form method="post" action="{{ url_for('update_document', doc_id=doc.id) }}" class="inline-edit-form" id="notesEditForm">
+            <input type="hidden" name="title" value="{{ doc.title }}">
+            <input type="hidden" name="category" value="{{ doc.category }}">
+            <span class="inline-editable" id="notesDisplay" onclick="startInlineEdit('notes')" title="Click to edit">Description: {{ doc.notes or 'No description yet.' }}</span>
+            <textarea class="inline-edit-input" name="notes" id="notesInput" rows="3" onblur="handleInlineBlur(this)" onkeydown="handleInlineKeydown(event, this)">{{ doc.notes or '' }}</textarea>
+          </form>
+        </div>
+
+        <div class="info-actions">
+          <form method="get" action="{{url_for('download_document', doc_id=doc.id)}}">
+            <button type="submit" class="btn btn-primary btn-sm">&#8595; Download</button>
+          </form>
+          <form method="post" action="{{ url_for('delete_document', doc_id=doc.id) }}" class="m-0" onsubmit="return confirm('Delete &quot;{{ doc.title }}&quot;? This removes all of its versions.');">
+            <button type="submit" class="btn btn-warning btn-sm">&#128465; Delete</button>
+          </form>
+        </div>
+
+        <ul class="meta-list">
+          <li><span class="meta-key">File Size</span><span class="meta-val">{{ doc.d_size() }}</span></li>
+          <li><span class="meta-key">File Type</span><span class="meta-val">{{ doc.extension()|upper }}</span></li>
+          <li><span class="meta-key">Category</span><span class="meta-val">{{ doc.category }}</span></li>
+          <li><span class="meta-key">Uploaded</span><span class="meta-val">{{ doc.uploaded_at|dateformat }} {{ doc.uploaded_at|timeformat }}</span></li>
+        </ul>
+      </div>
+      <!-------------------------------- version history ------------------------------------------->
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-header"><span class="panel-title">Version History</span></div>
+        {% for v in versions %}
+        <div class="version-row">
+          <span class="badge-version">V.{{ v.version }}</span>
+          <span class="v-date">{{ v.uploaded_at|dateformat }} &nbsp; {{ v.uploaded_at|timeformat }} &nbsp; {{ v.d_size() }}</span>
+          <div class="version-row-actions">
+            {% if not v.is_latest %}
+            <button type="button" class="btn btn-outline btn-sm">&#8635; Restore</button>
+            {% endif %}
+            <button type="button" class="btn btn-primary btn-sm">&#8595; Download</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
