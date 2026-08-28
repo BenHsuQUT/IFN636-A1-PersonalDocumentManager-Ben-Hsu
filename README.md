@@ -36,18 +36,19 @@ A Flask + Jinja2 + MySQL project: a personal document manager UI, using HTML/ CS
 ## Architecture Summary
 
 ```
-run.py                # entry point — launches the app from the project root
-pdm_project/          # a proper Python package (has __init__.py)
-├── __init__.py
-├── app.py            # all routes: auth, user dashboard, upload, admin dashboard
-├── config.py         # configuration (MySQL connection, upload limits, storage quotas)
-├── models.py         # User and Document SQLAlchemy models
-├── utils.py          # login_required / admin_required decorators, Jinja filters
-├── seed.py           # one-off demo data script
-├── templates/        # server-rendered Jinja2 pages
-└── static/
-    └──css/style.css  # styling design
-    └──js/app.js      #slight js codes from w3schools for supporting drag&drop functions and dropdowns
+IFN636-A1-PersonalDocumentManager-Ben-Hsu/
+├── run.py               # entry point — launches the app from the project root
+└── project/             # a proper Python package (has __init__.py)
+   ├── __init__.py
+   ├── app.py            # all routes: auth, user dashboard, upload, admin dashboard
+   ├── config.py         # configuration (MySQL connection, upload limits, storage quotas)
+   ├── models.py         # User and Document SQLAlchemy models
+   ├── utils.py          # login_required / admin_required decorators, Jinja filters
+   ├── seed.py           # one-off demo data script
+   ├── templates/        # server-rendered Jinja2 pages
+   └── static/
+       └──css/style.css  # styling design
+       └──js/app.js      #slight js codes from w3schools for supporting drag&drop functions and dropdowns
 ```
 
 ## Known Limitations
