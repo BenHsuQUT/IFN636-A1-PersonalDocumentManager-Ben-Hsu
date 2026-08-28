@@ -260,7 +260,7 @@ def upload_document():
     flash("Upload successful.", "success")
     return redirect(url_for("dashboard"))
 
-
+# -----------------------document_details-----------------------
 @app.route("/documents/<int:doc_id>")
 @login_required
 def document_details(doc_id):

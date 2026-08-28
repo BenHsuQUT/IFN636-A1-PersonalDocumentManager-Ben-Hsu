@@ -8,13 +8,13 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev_seccret")
+    SECRET_KEY = os.environ.get("SECRET_KEY")
 
     # ---- MySQL connection ----
-    MYSQL_USER = os.environ.get("MYSQL_USER", "root")
-    MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "00000000")
-    MYSQL_HOST = os.environ.get("MYSQL_HOST", "localhost")
-    MYSQL_PORT = os.environ.get("MYSQL_PORT", "3306")
+    MYSQL_USER = os.environ.get("MYSQL_USER")
+    MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD")
+    MYSQL_HOST = os.environ.get("MYSQL_HOST")
+    MYSQL_PORT = os.environ.get("MYSQL_PORT")
     MYSQL_DB = os.environ.get("MYSQL_DB", "personal_document_manager")
 
     SQLALCHEMY_DATABASE_URI = (
