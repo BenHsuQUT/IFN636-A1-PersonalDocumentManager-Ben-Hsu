@@ -13,8 +13,6 @@ A Flask + Jinja2 + MySQL project: a personal document manager UI, using HTML/ CS
 2. **Configure environment variables**
 
    ```bash
-   cd pdm_project
-   cp .env.example .env
    # edit .env with your MySQL credentials
    ```
 
@@ -22,8 +20,8 @@ A Flask + Jinja2 + MySQL project: a personal document manager UI, using HTML/ CS
 
    ```bash
    python -m venv venv
-   source venv/bin/activate      # Windows: venv\Scripts\activate
-   pip install -r pdm_project/requirements.txt
+   source venv/bin/activate
+   pip install -r requirements.txt
    ```
 
 
@@ -33,7 +31,7 @@ A Flask + Jinja2 + MySQL project: a personal document manager UI, using HTML/ CS
    python run.py
    ```
 
-   Open http://127.0.0.1:5000 — sign in as `jane` / `00000000` for the user dashboard, or `ben` / `00000000` for the admin dashboard.
+   Open http://127.0.0.1:5000 
 
 ## Architecture Summary
 
