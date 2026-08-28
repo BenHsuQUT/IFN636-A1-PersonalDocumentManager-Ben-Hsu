@@ -58,15 +58,17 @@ This build keeps only a few flows fully working end-to-end; everything else is U
 
 **Working Functions (version 1.0)**
 - Sign up, sign in, sign out
-- Uploading a document — saves title, category, description, and file size as metadata in the database.  Only `.pdf`, `.docx`, and `.txt` are accepted; other file types are rejected.
-- Changing a document's category from the dashboard row dropdown (picking one of your existing categories)
+- Core document CRUD functions — save title, category, description, file size as metadata in the database and save file in the project folder, deletes document, update document title, and download document. Only `.pdf`, `.docx`, and `.txt` are accepted; other file types are rejected.
+- Core Category CRUD functions  — create category, changing a document's category from the dashboard row dropdown (picking one of your existing categories), update category title, and delete a category
 - Opening the "My Category" panel to view your categories
+- Opening the "upload document" panel to upload your documents
 - Toggling a user's Active/Inactive status on the admin dashboard
 
 **Non-functional (present for the UI, no backend effect) (expected to be developed in version 2.0):**
 - Search, and the Type / Category / Date / Size / Sort filters on the dashboard, and the search/role/status filters on the admin dashboard — these are decorative; the lists always show everything
 - Restore on an older version
 - "Continue with Google / Apple" buttons, the admin sidebar's "Settings" link, and "Forgot password?"
+- preview document
 
 **Further expectation:**
 - Allowing a file to have multiple categories (must redesign the database and both the backend and frontend, but allow more flexible organisation for users)
