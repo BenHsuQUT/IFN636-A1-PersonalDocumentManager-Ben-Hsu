@@ -79,4 +79,4 @@ This build keeps only a few flows fully working end-to-end; everything else is U
 
 ## Deployment URL
 
-_Not deployed yet — TODO once hosted._
+The deployment url cannot be provided, as the public address cannot be consistent because the EC2 instance will be shot down every midnight. Please request the project owner for the testing public address.
